@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from utils.auth_utils import load_cashiers
-from config.credentials import ADMIN_USERNAME  # Import for display purposes
+from config.credentials import ADMIN_USERNAME
 import datetime
 import pytz
 
@@ -13,24 +13,21 @@ SALES_FILE = os.path.join(DATA_DIR, "sales.csv")
 jeddah_tz = pytz.timezone('Asia/Riyadh')
 
 def get_current_date():
-    """Returns the current date in Jeddah timezone."""
     return datetime.datetime.now(jeddah_tz).date()
 
 def load_sales_data(date=None):
-    """Loads sales data from CSV. If date is provided, filter for that date."""
     if not os.path.exists(SALES_FILE):
         return pd.DataFrame(columns=["worker_name", "amount", "payment_method", "date", "time", "cashier"])
     try:
         df = pd.read_csv(SALES_FILE)
+        df['date'] = pd.to_datetime(df['date']).dt.date
         if date:
-            df['date'] = pd.to_datetime(df['date']).dt.date
             return df[df['date'] == date]
         return df
     except FileNotFoundError:
         return pd.DataFrame(columns=["worker_name", "amount", "payment_method", "date", "time", "cashier"])
 
 def display_daily_stats(sales_df):
-    """Displays daily statistics (cash, network, total bills)."""
     if sales_df.empty:
         st.info("لا توجد مبيعات مسجلة لهذا اليوم.")
         return
@@ -44,6 +41,9 @@ def display_daily_stats(sales_df):
     col1.metric("إجمالي الكاش", f"{cash_sales:.2f} ريال")
     col2.metric("إجمالي الشبكة", f"{network_sales:.2f} ريال")
     col3.metric("عدد الفواتير", total_bills)
+
+    st.subheader("تفاصيل الفواتير")
+    st.dataframe(sales_df)
 
 def admin_page():
     st.title(f"لوحة تحكم الأدمن ({ADMIN_USERNAME})")
@@ -71,7 +71,19 @@ def admin_page():
 
     if menu == "الحركة اليومية":
         st.subheader("الحركة اليومية")
-        # سيتم إضافة تفاصيل الحركة اليومية هنا
+        selected_day_sales = None
+        if "اليوم" in selected_date:
+            selected_day_sales = load_sales_data(today)
+        elif "أمس" in selected_date:
+            selected_day_sales = load_sales_data(yesterday)
+        elif "قبل أمس" in selected_date:
+            selected_day_sales = load_sales_data(two_days_ago)
+
+        if selected_day_sales is not None and not selected_day_sales.empty:
+            st.dataframe(selected_day_sales)
+        elif selected_day_sales is not None:
+            st.info("لا توجد فواتير مسجلة لهذا اليوم.")
+
     elif menu == "التقارير":
         st.subheader("التقارير")
         # سيتم إضافة خيارات التقارير هنا
