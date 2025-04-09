@@ -1,33 +1,31 @@
 import streamlit as st
-import pandas as pd
-from utils.auth_utils import authenticate_user
-from config.credentials import ADMIN_USERNAME, ADMIN_PASSWORD
+from utils.auth_utils import check_admin_credentials, check_cashier_credentials
 
-st.set_page_config(page_title="CleanFoam - تسجيل الدخول", page_icon="🧼")
-st.title("نظام CleanFoam")
-st.subheader("تسجيل الدخول")
+st.set_page_config(page_title="CleanFoam Login", page_icon="🧼")
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "role" not in st.session_state:
-    st.session_state.role = None
-if "username" not in st.session_state:
-    st.session_state.username = ""
+st.title("تسجيل الدخول إلى نظام CleanFoam")
 
 username = st.text_input("اسم المستخدم")
 password = st.text_input("كلمة المرور", type="password")
+login_button = st.button("تسجيل الدخول")
 
-if st.button("دخول"):
-    role = authenticate_user(username, password)
-    if role:
-        st.session_state.authenticated = True
-        st.session_state.role = role
+if login_button:
+    if username == "Admin" and check_admin_credentials(username, password):
+        st.success("تم تسجيل دخول المسؤول بنجاح!")
+        st.session_state.logged_in = True
+        st.session_state.user_type = "admin"
+        st.rerun()
+    elif check_cashier_credentials(username, password):
+        st.success(f"تم تسجيل دخول الكاشير {username} بنجاح!")
+        st.session_state.logged_in = True
+        st.session_state.user_type = "cashier"
         st.session_state.username = username
-        if role == "admin":
-            st.success("تم تسجيل الدخول كأدمن")
-            st.switch_page("admin_app.py")
-        elif role == "cashier":
-            st.success("تم تسجيل الدخول ككاشير")
-            st.switch_page("cashier_app.py")
+        st.rerun()
     else:
-        st.error("بيانات الدخول غير صحيحة")
+        st.error("اسم المستخدم أو كلمة المرور غير صحيحة.")
+
+if "logged_in" in st.session_state and st.session_state.logged_in:
+    if st.session_state.user_type == "admin":
+        st.info("سيتم توجيهك إلى واجهة الأدمن...")
+    elif st.session_state.user_type == "cashier":
+        st.info("سيتم توجيهك إلى واجهة الكاشير...")
