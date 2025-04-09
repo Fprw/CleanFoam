@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from config.credentials import ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_CODE
+from config.credentials import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.data_utils import load_cashiers
 
 def login_user():
@@ -10,14 +10,10 @@ def login_user():
 
     if st.button("دخول"):
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            code = st.text_input("رمز التحقق", type="password")
-            if code == ADMIN_CODE:
-                st.session_state.authenticated = True
-                st.session_state.role = "admin"
-                st.session_state.username = username
-                st.experimental_rerun()
-            else:
-                st.error("رمز التحقق غير صحيح")
+            st.session_state.authenticated = True
+            st.session_state.role = "admin"
+            st.session_state.username = username
+            st.experimental_rerun()
         else:
             df = load_cashiers()
             user = df[df['username'] == username]
