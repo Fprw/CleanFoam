@@ -3,6 +3,14 @@ import pandas as pd
 from utils.data_utils import load_csv
 from utils.ui_helpers import show_header
 
+if "authenticated" not in st.session_state or not st.session_state.authenticated:
+    st.warning("يرجى تسجيل الدخول أولاً.")
+    st.stop()
+
+if st.session_state.role != "cashier":
+    st.error("غير مصرح لك بالدخول إلى هذه الصفحة.")
+    st.stop()
+
 show_header("تقارير الكاشير")
 
 sales = load_csv("sales.csv")
@@ -29,16 +37,16 @@ elif report == "تقرير العمال":
     start = st.date_input("من تاريخ")
     end = st.date_input("إلى تاريخ")
     df = sales[(sales["date"] >= str(start)) & (sales["date"] <= str(end))]
-    exp_df = load_csv("expenses_workers.csv")
+    exp_df = expenses_workers
 
     table = []
     for worker in df["worker_name"].unique():
         total = df[df["worker_name"] == worker]["amount"].sum()
-        withdraw = exp_df[exp_df["worker_name"] == worker]["amount"].sum()
+        withdrawn = exp_df[exp_df["worker_name"] == worker]["amount"].sum()
         half = total / 2
         fee = 30
-        remaining = half - fee - withdraw
-        table.append([worker, total, withdraw, remaining])
+        remaining = half - fee - withdrawn
+        table.append([worker, total, withdrawn, remaining])
 
     result = pd.DataFrame(table, columns=["العامل", "الإجمالي", "المسحوب", "الباقي"])
     st.dataframe(result)
