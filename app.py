@@ -11,12 +11,15 @@ if 'role' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = ""
 
+# إذا لم يتم تسجيل الدخول، لا نظهر أي صفحة
 if not st.session_state.authenticated:
     login_user()
+    st.stop()
+
+# توجيه المستخدم بناءً على الدور
+if st.session_state.role == "admin":
+    show_admin_dashboard()
+elif st.session_state.role == "cashier":
+    show_cashier_dashboard()
 else:
-    if st.session_state.role == "admin":
-        show_admin_dashboard()
-    elif st.session_state.role == "cashier":
-        show_cashier_dashboard()
-    else:
-        st.error("الصلاحية غير معروفة.")
+    st.error("الصلاحية غير معروفة.")
