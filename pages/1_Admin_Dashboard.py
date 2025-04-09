@@ -3,6 +3,14 @@ from utils.ui_helpers import show_header, get_now
 import pandas as pd
 from utils.data_utils import load_csv
 
+if "authenticated" not in st.session_state or not st.session_state.authenticated:
+    st.warning("يرجى تسجيل الدخول أولاً.")
+    st.stop()
+
+if st.session_state.role != "admin":
+    st.error("غير مصرح لك بالدخول إلى هذه الصفحة.")
+    st.stop()
+
 show_header("لوحة تحكم الأدمن")
 
 sales = load_csv("sales.csv")
