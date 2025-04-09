@@ -1,35 +1,46 @@
-import streamlit as st
+import os
 import pandas as pd
 from config.credentials import ADMIN_USERNAME, ADMIN_PASSWORD
-from utils.data_utils import load_cashiers
 
-def authenticate_user(username, password):
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-        return "admin"
+DATA_DIR = "data"
+CASHIERS_FILE = os.path.join(DATA_DIR, "cashiers.csv")
 
-    df = load_cashiers()
-    user = df[df["username"] == username]
-    if not user.empty and user.iloc[0]["password"] == password:
-        return "cashier"
+def check_admin_credentials(username, password):
+    """
+    التحقق من بيانات اعتماد المسؤول.
+    """
+    return username == ADMIN_USERNAME and password == ADMIN_PASSWORD
 
-    return None
+def load_cashiers():
+    """
+    تحميل بيانات الكاشيرين من ملف CSV.
+    إذا لم يكن الملف موجودًا، يتم إنشاء ملف فارغ.
+    """
+    if not os.path.exists(CASHIERS_FILE):
+        return pd.DataFrame(columns=["username", "password", "permissions"])
+    try:
+        return pd.read_csv(CASHIERS_FILE)
+    except FileNotFoundError:
+        return pd.DataFrame(columns=["username", "password", "permissions"])
 
-def login_user():
-    st.title("تسجيل الدخول - CleanFoam")
-    username = st.text_input("اسم المستخدم")
-    password = st.text_input("كلمة المرور", type="password")
+def check_cashier_credentials(username, password):
+    """
+    التحقق من بيانات اعتماد الكاشير.
+    """
+    cashiers_df = load_cashiers()
+    cashier = cashiers_df[cashiers_df["username"] == username]
+    if not cashier.empty:
+        return cashier["password"].iloc[0] == password
+    return False
 
-    if st.button("دخول"):
-        role = authenticate_user(username, password)
-        if role:
-            st.session_state.authenticated = True
-            st.session_state.role = role
-            st.session_state.username = username
-            if role == "admin":
-                st.success("تم تسجيل الدخول كأدمن")
-                st.switch_page("admin_app.py")
-            else:
-                st.success("تم تسجيل الدخول ككاشير")
-                st.switch_page("cashier_app.py")
-        else:
-            st.error("بيانات الدخول غير صحيحة")
+if __name__ == "__main__":
+    # اختبار الدوال بشكل مبدئي
+    print(f"هل بيانات الأدمن صحيحة؟: {check_admin_credentials('Admin', 'CF3010@@')}")
+    print(f"هل بيانات الأدمن خاطئة؟: {check_admin_credentials('Admin', 'wrong_password')}")
+
+    # مثال على تحميل الكاشيرين (سيظهر فارغًا في البداية)
+    cashiers = load_cashiers()
+    print("\nبيانات الكاشيرين:")
+    print(cashiers)
+
+    # يمكنك إضافة المزيد من الاختبارات هنا بعد إضافة بيانات إلى cashiers.csv
